@@ -1,4 +1,6 @@
+
 Spree::CheckoutController.class_eval do
+  include ActionView::Helpers::OutputSafetyHelper
 
   #Zinrelo: post purchase transactions
   def zrl_purchase(order)
@@ -26,10 +28,24 @@ Spree::CheckoutController.class_eval do
     product["category"]
     product["tags"]
 
-    products << product
+     product_str=''
+     products_str='&products=['
+     order.line_items.each do |product|
+       if product_str.length>0
+         product_str=','
+       end
+       product_str= product_str + '{"product_id":"'+product.variant_id.to_s+'","price":"'+ product.price.to_s+'","quantity":"'+product.quantity.to_s+'",'
+       product_str = product_str + '"title":"'+ product.name+'","url":"'+"https://#{order.store.url}/products/" + product.product.slug + "?variant_id=" + product.variant.id.to_s+'",'
+       product_str = product_str + '"category":""}'
 
-    data["products"]=products
+       products_str=products_str + product_str
+     end
+     products_str=products_str+']'
 
+    # products << product
+    #
+    # data["products"]=products
+    #
 #    request["data"]=data
 
     params={'user_email'=>order.email,
@@ -39,10 +55,10 @@ Spree::CheckoutController.class_eval do
             'currency' => order.currency,
             'coupon_code' => ''}
 
-
     params_str="?user_email="+order.email+"&total="+order.total.to_s+"&subtotal="+order.item_total.to_s+"&order_id="+order.number.to_s+"&currency="+order.currency
+    params_str=params_str + raw(products_str)
 
-# now post to ZenDesk
+    # now post to ZenDesk
     require "net/https"
     require "uri"
     url= "https://api.zinrelo.com/v1/loyalty/purchase"+params_str
@@ -72,10 +88,10 @@ Spree::CheckoutController.class_eval do
 
       result=JSON.parse(response.body)
 
-      Rails.logger.error("Zinrelo request is created.\nthe post body is: \n" + request.to_json)
+      Rails.logger.error("Zinrelo request is created.\nthe post body is: \n" + url)
     rescue
 
-      Rails.logger.error("Zinrelo request post failed\n the post body is: \n" + request.to_json)
+      Rails.logger.error("Zinrelo request post failed\n the post body is: \n" + url)
     end
   end
 
