@@ -7,91 +7,39 @@ Spree::CheckoutController.class_eval do
 
     #this is to post purchase transaction to zinerl
     request={}
-    data={}
-    products=[]
+    products_param=[]
 
-    data={}
-    data["user_email"]= order.email
-    data["total"]=order.total.to_s
-    data["subtotal"]=order.item_total.to_s
-    data["order_id"]=order.id
-    data["currency"]=order.currency
-    data["coupon_code"]
+    order.line_items.each do |product|
+       product_param={:product_id => product.variant_id.to_s,:price => product.price.to_s, :quantity=> product.quantity.to_s, :title => product.name, :url =>"https://#{order.store.url}/products/" + product.product.slug + "?variant_id=" + product.variant.id.to_s, :category => ''}
+       products_param << product_param
+    end
 
-    product={}
-    product["product_id"]= order.line_items.first.variant_id.to_s
-    product["price"]=order.line_items.first.price.to_s
-    product["quantity"]=order.line_items.first.quantity.to_s
-    product["title"]=order.line_items.first.name
-    product["url"] = "https://#{order.store.url}/products/" + order.line_items.first.product.slug + "?variant_id=" + order.line_items.first.variant.id.to_s
-    product["img_url"]
-    product["category"]
-    product["tags"]
-
-     product_str=''
-     products_str='&products=['
-     order.line_items.each do |product|
-       if product_str.length>0
-         product_str=','
-       end
-       product_str= product_str + '{"product_id":"'+product.variant_id.to_s+'","price":"'+ product.price.to_s+'","quantity":"'+product.quantity.to_s+'",'
-       product_str = product_str + '"title":"'+ product.name+'","url":"'+"https://#{order.store.url}/products/" + product.product.slug + "?variant_id=" + product.variant.id.to_s+'",'
-       product_str = product_str + '"category":""}'
-
-       products_str=products_str + product_str
-     end
-     products_str=products_str+']'
-
-    # products << product
-    #
-    # data["products"]=products
-    #
-#    request["data"]=data
-
-    params={'user_email'=>order.email,
-            'total' => order.total.to_s,
-            'subtotal' => order.item_total.to_s,
-            'order_id' => order.id,
-            'currency' => order.currency,
-            'coupon_code' => ''}
-
-    params_str="?user_email="+order.email+"&total="+order.total.to_s+"&subtotal="+order.item_total.to_s+"&order_id="+order.number.to_s+"&currency="+order.currency
-    params_str=params_str + raw(products_str)
-
-    # now post to ZenDesk
     require "net/https"
     require "uri"
-    url= "https://api.zinrelo.com/v1/loyalty/purchase"+params_str
 
-    Rails.logger.error("data object to be posed:\n #{request.to_json}")
-    body= request.to_json
-    headers={
-        'Content-Type' => 'application/json',
-        'Content-Encoding' => 'gzip',
-        'partner-id' => Spree::ZinreloConfiguration.account[@order.store.code]["partner_id"],
-        'api-key' => Spree::ZinreloConfiguration.account[@order.store.code]["api_key"]}
-# headers["Content-Type"] = 'application/json' unless body.niuri
-    begin
-      uri = URI.parse(url)
+    uri = URI.parse("https://api.zinrelo.com/v1/loyalty/purchase")
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.read_timeout = 2
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    header = {"Content-Type"=> "text/json", "partner-id"=>Spree::ZinreloConfiguration.account[@order.store.code]["partner_id"], "api-key"=>Spree::ZinreloConfiguration.account[@order.store.code]["api_key"]}
+    params = { :user_email => order.email, :order_id => order.number.to_s, :total =>order.total.to_s, :subtotal => order.item_total.to_s,:currency =>order.currency,:products => raw(products_param.to_json) }
 
-      response = http.post(uri.request_uri,body, headers )
-      #request.body=body
+  begin
+    uri.query = URI.encode_www_form(params)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.read_timeout = 2
+    http.use_ssl = (uri.scheme == "https")
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
-      #     response = http.request(request)
+    request = Net::HTTP::Post.new(uri.request_uri, header)
+    response = http.request(request)
 
       Rails.logger.error("post to Zinrelo response:\n #{response.body.to_yaml}")
 
       result=JSON.parse(response.body)
 
-      Rails.logger.error("Zinrelo request is created.\nthe post body is: \n" + url)
+      Rails.logger.error("Zinrelo request is created.\nthe post body is: \n" + uri.inspect)
     rescue
 
-      Rails.logger.error("Zinrelo request post failed\n the post body is: \n" + url)
+      Rails.logger.error("Zinrelo request post failed\n the post body is: \n" + uri.inspect)
     end
   end
 
@@ -116,39 +64,33 @@ Spree::CheckoutController.class_eval do
 
   #zinrelo: redeem points
   def zrl_redeem(order, reward_id,reward_amt)
-    #POST https://api.zinrelo.com/v1/loyalty/redeem
-
-    params_str="?user_email="+order.email+"&redemption_id="+reward_id
 
     require "net/https"
     require "uri"
-    url= "https://api.zinrelo.com/v1/loyalty/redeem"+params_str
 
-    Rails.logger.error("Zinrelo Points redeem:\n #{params_str}")
-    headers={
-        'Content-Type' => 'application/json',
-        'Content-Encoding' => 'gzip',
-        'partner-id' => Spree::ZinreloConfiguration.account[@order.store.code]["partner_id"],
-        'api-key' => Spree::ZinreloConfiguration.account[@order.store.code]["api_key"]}
+    uri = URI.parse("https://api.zinrelo.com/v1/loyalty/redeem")
+
+    header = {"Content-Type"=> "text/json", "partner-id"=>Spree::ZinreloConfiguration.account[@order.store.code]["partner_id"], "api-key"=>Spree::ZinreloConfiguration.account[@order.store.code]["api_key"]}
+    params = { :user_email => order.email, :redemption_id => reward_id}
 
     begin
-      uri = URI.parse(url)
-
+      uri.query = URI.encode_www_form(params)
       http = Net::HTTP.new(uri.host, uri.port)
       http.read_timeout = 2
-      http.use_ssl = true
+      http.use_ssl = (uri.scheme == "https")
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
-      response = http.post(uri.request_uri,"", headers )
+      request = Net::HTTP::Post.new(uri.request_uri, header)
+      response = http.request(request)
 
       Rails.logger.error("post to Zinrelo response:\n #{response.body.to_yaml}")
 
       result=JSON.parse(response.body)
 
-      Rails.logger.error("Zinrelo point redemption\nthe post body is: \n" + params_str)
+      Rails.logger.error("Zinrelo point redemption\nthe post body is: \n" + uri.inspect)
     rescue
 
-      Rails.logger.error("Zinrelo point redemption\n the post body is: \n" + params_str)
+      Rails.logger.error("Zinrelo point redemption\n the post body is: \n" + uri.inspect)
     end
   end
 
