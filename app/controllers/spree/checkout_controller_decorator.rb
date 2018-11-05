@@ -10,8 +10,8 @@ Spree::CheckoutController.class_eval do
     products_param=[]
 
     order.line_items.each do |product|
-       product_param={:product_id => product.variant_id.to_s,:price => product.price.to_s, :quantity=> product.quantity.to_s, :title => product.name, :url =>"https://#{order.store.url}/products/" + product.product.slug + "?variant_id=" + product.variant.id.to_s, :category => ''}
-       products_param << product_param
+      product_param={:product_id => product.variant_id.to_s,:price => product.price.to_s, :quantity=> product.quantity.to_s, :title => product.name, :url =>"https://#{order.store.url}/products/" + product.product.slug + "?variant_id=" + product.variant.id.to_s, :img_url =>product.variant.images.first.attachment.url(:original),:category => ''}
+      products_param << product_param
     end
 
     require "net/https"

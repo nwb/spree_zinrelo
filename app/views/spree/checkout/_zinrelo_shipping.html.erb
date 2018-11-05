@@ -3,7 +3,8 @@
 %>
 <% if !@current_user.nil? %>
   <% rewards = zrl_getUserRedemption(@current_user.email) %>
-  <%if !rewards['data'].nil?%>
+  <%if !rewards.nil?%>
+    <%if !rewards['data'].nil?%>
     <% if rewards['data']['total'] > 0 %>
       <div id="zinrelo_rewards_options">
         <div class="left reward-label">Redeem Loyalty Rewards</div>
@@ -15,5 +16,6 @@
         </div>
       </div>
     <% end %>
+  <%end%>
   <%end%>
 <% end %>
