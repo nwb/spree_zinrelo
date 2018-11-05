@@ -6,12 +6,12 @@
   <%if !rewards.nil?%>
     <%if !rewards['data'].nil?%>
     <% if rewards['data']['total'] > 0 %>
-      <div id="zinrelo_rewards_options">
+      <div id="zinrelo_rewards_options" style="height:45px;font-size:14px;">
         <div class="left reward-label">Redeem Loyalty Rewards</div>
         <div class="right">
           <div id="available_redemption">
             <%= select_tag "redemptions",
-                           options_for_select(rewards['data']['redemptions'].map {|rd| ["#{rd["allowed_redeem_points"]} points for #{Spree::Money.new(rd["redemption_value"], :currency => @order.currency)}", rd["redemption_id"] + ' ' + rd["redemption_value"].to_s + ' ' + rd["allowed_redeem_points"].to_s] }), {:class => "right zinrelo_options", :include_blank => "select rewards"} %>
+                           options_for_select(rewards['data']['redemptions'].map {|rd| ["#{rd["allowed_redeem_points"]} points for #{Spree::Money.new(rd["redemption_value"], :currency => @order.currency)}", rd["redemption_id"] + ' ' + rd["redemption_value"].to_s + ' ' + rd["allowed_redeem_points"].to_s] }), {:class => "right zinrelo_options", :include_blank => "select rewards",:style => "height:34px;"} %>
           </div>
         </div>
       </div>
