@@ -7,7 +7,7 @@
     <div class="panel-body delivery">
       <h2>Rewards Redeemed!</h2>
       <p>You redeemed <%= rewards[3] %> points for
-        a <%= Spree::Money.new(rewards_redeemed.amount.abs, :currency => @order.currency) %>. Your new point balance is
+        <%= Spree::Money.new(rewards_redeemed.amount.abs, :currency => @order.currency) %>. Your new point balance is
         : <%= user_profile["available_points"] %></p>
     </div>
   </div>
