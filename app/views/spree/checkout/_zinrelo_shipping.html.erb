@@ -2,7 +2,7 @@
   @order ||= order
 %>
 <% if !@current_user.nil? %>
-  <% rewards = zrl_getUserRedemption(@current_user.email) %>
+  <% rewards = Zinrelo.new.zrl_getUserRedemption(@current_user.email,@order.store.code) %>
   <%if !rewards.nil?%>
     <%if !rewards['data'].nil?%>
     <% if rewards['data']['total'] > 0 %>
