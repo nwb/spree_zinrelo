@@ -9,6 +9,7 @@ module Spree
             return adjustment
           end
         end
+        return nil
       end
     end
 
