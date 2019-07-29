@@ -137,5 +137,38 @@ class Zinrelo
     end
   end
 
+  #zinrelo: returns
+  def zrl_return(order, returned_amount,returned_product_id, quantity)
+
+    require "net/https"
+    require "uri"
+
+    uri = URI.parse("https://api.zinrelo.com/v1/loyalty/transaction/return")
+
+    header = {"Content-Type"=> "text/json", "partner-id"=>Spree::ZinreloConfiguration.account[order.store.code]["partner_id"], "api-key"=>Spree::ZinreloConfiguration.account[order.store.code]["api_key"]}
+    params = { :order_id => order.number.to_s, :returned_amount =>returned_amount, :returned_product_id => returned_product_id, :quantity => quantity}
+
+    begin
+      uri.query = URI.encode_www_form(params)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.read_timeout = 2
+      http.use_ssl = (uri.scheme == "https")
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+      request = Net::HTTP::Post.new(uri.request_uri, header)
+      response = http.request(request)
+
+      Rails.logger.error("post to Zinrelo response:\n #{response.body.to_yaml}")
+
+      result=JSON.parse(response.body)
+
+      Rails.logger.error("Zinrelo return\nthe post body is: \n" + uri.inspect)
+    rescue
+
+      Rails.logger.error("Zinrelo return\n the post body is: \n" + uri.inspect)
+    end
+
+  end
 
 end
+
